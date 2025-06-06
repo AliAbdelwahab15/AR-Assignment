@@ -5,7 +5,6 @@ public class CubeHolder : MonoBehaviour
 {
     public string acceptedTag;
 
-    // Prevents multiple snaps
     private bool isSolved = false;
 
     private void OnTriggerStay(Collider other)
@@ -13,37 +12,41 @@ public class CubeHolder : MonoBehaviour
         if (isSolved)
             return;
 
-        if (!other.CompareTag(acceptedTag))
+        CubeController cube = other.GetComponent<CubeController>();
+        if (cube == null)
             return;
 
         XRGrabInteractable grab = other.GetComponent<XRGrabInteractable>();
-
         if (grab != null && grab.isSelected)
             return;
 
-        isSolved = true;
-
-        other.transform.position = transform.position;
-        other.transform.rotation = transform.rotation;
-
-        Rigidbody rb = other.GetComponent<Rigidbody>();
-        if (rb != null)
+        if (other.CompareTag(acceptedTag))
         {
-            rb.velocity = Vector3.zero;
-            rb.angularVelocity = Vector3.zero;
-            rb.isKinematic = true;
-        }
+            isSolved = true;
 
-        if (grab != null)
+            other.transform.position = transform.position;
+            other.transform.rotation = transform.rotation;
+
+            Rigidbody rb = other.GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                rb.velocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+                rb.isKinematic = true;
+                rb.useGravity = false;
+            }
+
+            if (grab != null)
+                grab.enabled = false;
+
+            GameWorker manager = FindObjectOfType<GameWorker>();
+            if (manager != null)
+                manager.RegisterCorrectPlacement();
+
+        }
+        else
         {
-            grab.enabled = false;
+            cube.ReturnToOriginal();
         }
-
-        SolvePuzzle manager = FindObjectOfType<SolvePuzzle>();
-        if (manager != null)
-        {
-            manager.RegisterCorrectPlacement();
-        }
-
     }
 }
